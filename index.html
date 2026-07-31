@@ -771,7 +771,7 @@
               updateUI();
             } catch (err) {
               const imgRef = state.images.find(img => img.id === item.id);
-              if (imgRef) imgRef.label = state.isEstimateMode ? '現場調査' : '完了';
+              if (imgRef) imgRef.label = state.isEstimateMode ? '現場調査' : '施工前'; // エラー時は施工前にして気付きやすく
               updateUI();
             }
           }));
@@ -841,19 +841,21 @@
       updateUI();
     }
 
-    // --- API Interactions (Fixed Retry Logic) ---
+    // --- API Interactions (プロンプト大幅改善) ---
     async function analyzeImageWithGemini(base64String, mimeType, imageIndex, totalImagesCount) {
       const prompt = `
 あなたは設備メンテナンスの専門家です。この写真は店舗でのメンテナンス作業の写真です。
 写真の内容を判断し、以下の選択肢の中から最も適切なものを1つだけ（単語のみ）出力してください。
 選択肢: 現場調査, 点検, 施工前, 施工中, 施工後, 完了
-判断基準:
+
+【判断基準】
 - 現場調査: 見積作成や事前確認のための現状写真。
 - 点検: 作業箇所の事前確認。
-- 施工前: 作業が始まる直前の状態。給湯器等の内部部品交換はカバー開けた直後は施工前。
-- 施工中: 作業員の手や工具が写っている、交換途中。
-- 施工後: 物理的な作業が終わった直後。
-- 完了: 通水テスト等の最終チェック。
+- 施工前: 作業が始まる直前の状態。★便器だけの写真や、カバーを開けた直後は「施工前」です。
+- 施工中: 作業員の手（ゴム手袋など）や工具（ローポンプ、ドライバー等）がハッキリ写っている写真は、絶対に「施工中」と判定してください。
+- 施工後: 工具などがなくなり、物理的な作業が終わった直後（詰まりが抜けた直後の便器など）。
+- 完了: 通水テスト（便器に水が流れている様子など）や最終チェックの様子は「完了」と判定してください。
+
 ${state.isEstimateMode ? `
 ★超重要（見積用モード）: 基本的に「現場調査」と判定。明確な作業・完了がない限り他を選ばない。
 ` : `
@@ -862,13 +864,13 @@ ${state.isEstimateMode ? `
 ・前半は「点検」「施工前」
 ・中盤は「施工中」
 ・最後から2番目付近は「施工後」
-・最後は「完了」の傾向。順番情報を最優先。迷ったら「施工後」。
+・最後は「完了」の傾向。順番情報を最優先しつつ、画像に「手や工具」「流れる水」が写っていればその特徴を優先してください。
 `}
       `;
 
       const payload = { contents: [{ role: "user", parts: [{ text: prompt }, { inlineData: { mimeType, data: base64String } }] }] };
       const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${apiKey}`;
-      const delays = [1000, 2000, 4000, 8000, 16000]; // 5回の指数バックオフ
+      const delays = [1000, 2000, 4000, 8000, 16000]; 
 
       for (let i = 0; i < delays.length; i++) {
         try {
@@ -879,15 +881,15 @@ ${state.isEstimateMode ? `
           for (const label of labelOptions) {
             if (text && text.includes(label)) return label;
           }
-          return state.isEstimateMode ? '現場調査' : '施工後';
+          return state.isEstimateMode ? '現場調査' : '施工前'; // 迷った場合は施工前にして気づきやすく
         } catch (error) {
           if (i === delays.length - 1) {
-             return state.isEstimateMode ? '現場調査' : '施工後';
+             return state.isEstimateMode ? '現場調査' : '施工前';
           }
           await new Promise(r => setTimeout(r, delays[i])); 
         }
       }
-      return state.isEstimateMode ? '現場調査' : '施工後';
+      return state.isEstimateMode ? '現場調査' : '施工前';
     }
 
     async function organizeImagesWithGemini() {
@@ -909,8 +911,9 @@ ${state.isEstimateMode ? `
 ・★超重要（見積用モード）: 見積作成用なので、原則すべての適切な写真を「現場調査」として判定。
 ` : `
 ・★超重要（通常施工モード）: 実際の作業報告なので「現場調査」は使用不可。
-・時間の流れ（事前確認 → 作業直前 → 作業中 → 部品交換完了 → 最終チェック）を推測。
-・全体の流れの中での順番を最優先。迷ったら「施工後」。
+・時間の流れ（事前確認 → 作業直前 → 作業中 → 部品交換完了/詰まり解消 → 通水テスト等最終チェック）を推測。
+・全体の流れの中での順番を最優先。
+・★事例（トイレ詰まり修理）: 作業前の便器＝「施工前」。手袋やローポンプなどの工具を使って作業している最中＝「施工中」。詰まりが解消した直後の便器＝「施工後」。最後に水を流してテストしている様子＝「完了」。
 `}
 ・不要な画像（関係ない風景、ピンボケ等）は is_needed: false に。
 出力は以下のJSON配列形式のみ。Markdownは含めない。
