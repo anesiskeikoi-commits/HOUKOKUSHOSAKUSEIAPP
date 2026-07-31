@@ -8,9 +8,6 @@
   <!-- Tailwind CSS -->
   <script src="https://cdn.tailwindcss.com"></script>
   
-  <!-- Lucide Icons -->
-  <script src="https://unpkg.com/lucide@latest"></script>
-  
   <!-- html2pdf.js -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
 
@@ -25,30 +22,52 @@
     }
     .pdf-page {
       width: 210mm;
-      height: 296mm; /* 297mmだと誤差で余白ができるため少し小さく設定 */
+      height: 296mm; 
       box-sizing: border-box;
       padding: 12mm 15mm;
       background-color: white;
       display: flex;
       flex-direction: column;
       gap: 5mm;
-      overflow: hidden; /* はみ出しによる自動改ページを防止 */
+      overflow: hidden;
     }
     /* html2pdf が自動認識する改ページ用クラス */
     .html2pdf__page-break {
-      page-break-before: always;
+      page-break-before: always !important;
     }
-    /* ドラッグ＆ドロップ時のスタイル */
     .dragging {
       opacity: 0.5;
     }
-    /* 非表示ユーティリティ */
     .hidden {
       display: none !important;
     }
   </style>
 </head>
 <body class="bg-gray-100 font-sans text-gray-800 relative">
+
+  <!-- SVGアイコン定義群 (非表示) -->
+  <svg style="display: none;">
+    <defs>
+      <g id="icon-trash"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/><line x1="10" x2="10" y1="11" y2="17"/><line x1="14" x2="14" y1="11" y2="17"/></g>
+      <g id="icon-image"><rect width="18" height="18" x="3" y="3" rx="2" ry="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21"/></g>
+      <g id="icon-file-text"><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"/><path d="M14 2v4a2 2 0 0 0 2 2h4"/><path d="M10 9H8"/><path d="M16 13H8"/><path d="M16 17H8"/></g>
+      <g id="icon-file-plus"><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"/><path d="M14 2v4a2 2 0 0 0 2 2h4"/><path d="M9 15h6"/><path d="M12 12v6"/></g>
+      <g id="icon-upload"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" x2="12" y1="3" y2="15"/></g>
+      <g id="icon-check-square"><polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></g>
+      <g id="icon-pen-tool"><path d="m12 19 7-7 3 3-7 7-3-3z"/><path d="m18 13-1.5-7.5L2 2l3.5 14.5L13 18l5-5z"/><path d="m2 2 7.586 7.586"/><circle cx="11" cy="11" r="2"/></g>
+      <g id="icon-x"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></g>
+      <g id="icon-arrow-right-left"><path d="m16 3 4 4-4 4"/><path d="M20 7H4"/><path d="m8 21-4-4 4-4"/><path d="M4 17h16"/></g>
+      <g id="icon-rotate-cw"><path d="M21 12a9 9 0 1 1-9-9c2.52 0 4.93 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/></g>
+      <g id="icon-chevron-left"><path d="m15 18-6-6 6-6"/></g>
+      <g id="icon-chevron-right"><path d="m9 18 6-6-6-6"/></g>
+      <g id="icon-tag"><path d="M12.586 2.586A2 2 0 0 0 11.172 2H4a2 2 0 0 0-2 2v7.172a2 2 0 0 0 .586 1.414l8.704 8.704a2.426 2.426 0 0 0 3.42 0l6.58-6.58a2.426 2.426 0 0 0 0-3.42z"/><circle cx="7.5" cy="7.5" r=".5" fill="currentColor"/></g>
+      <g id="icon-message-square"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></g>
+      <g id="icon-sparkles"><path d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3Z"/><path d="M5 3v4"/><path d="M19 17v4"/><path d="M3 5h4"/><path d="M17 19h4"/></g>
+      <g id="icon-plus"><path d="M5 12h14"/><path d="M12 5v14"/></g>
+      <g id="icon-download"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" x2="12" y1="15" y2="3"/></g>
+      <g id="icon-loader"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></g>
+    </defs>
+  </svg>
 
   <!-- ★画像ホバー時の拡大プレビュー -->
   <div id="hoverPreview" class="fixed z-[100] pointer-events-none p-2 bg-white/95 backdrop-blur-sm rounded-xl shadow-[0_10px_30px_rgba(0,0,0,0.3)] border border-gray-200 hidden">
@@ -59,19 +78,15 @@
   <div id="resetModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4 hidden">
     <div class="bg-white rounded-xl p-6 max-w-sm w-full shadow-2xl border border-red-100">
       <h3 class="text-lg font-bold text-gray-900 mb-2 flex items-center">
-        <i data-lucide="trash-2" class="w-5 h-5 mr-2 text-red-600"></i>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-5 h-5 mr-2 text-red-600"><use href="#icon-trash"></use></svg>
         データをリセットしますか？
       </h3>
       <p class="text-sm text-gray-600 mb-6 leading-relaxed">
         アップロードした写真、現場情報、入力テキスト、署名などが<strong class="text-red-600">すべて消去</strong>されます。<br/>この操作は元に戻せません。
       </p>
       <div class="flex justify-end space-x-3">
-        <button onclick="closeResetModal()" class="px-4 py-2 text-gray-600 bg-gray-100 hover:bg-gray-200 rounded-lg font-medium transition-colors text-sm">
-          キャンセル
-        </button>
-        <button onclick="resetAllData()" class="px-4 py-2 text-white bg-red-600 hover:bg-red-700 rounded-lg font-medium transition-colors text-sm">
-          リセットして新規作成
-        </button>
+        <button onclick="closeResetModal()" class="px-4 py-2 text-gray-600 bg-gray-100 hover:bg-gray-200 rounded-lg font-medium transition-colors text-sm">キャンセル</button>
+        <button onclick="resetAllData()" class="px-4 py-2 text-white bg-red-600 hover:bg-red-700 rounded-lg font-medium transition-colors text-sm">リセットして新規作成</button>
       </div>
     </div>
   </div>
@@ -81,16 +96,16 @@
     <div class="max-w-4xl mx-auto mb-4 flex justify-between items-end">
       <div class="flex space-x-2">
         <button id="tabBtnPhoto" onclick="switchTab('photo')" class="flex items-center px-6 py-3 rounded-t-lg font-bold text-sm transition-colors bg-white text-blue-700 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.1)] border-t-4 border-blue-600">
-          <i data-lucide="image" class="w-5 h-5 mr-2"></i>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-5 h-5 mr-2"><use href="#icon-image"></use></svg>
           写真報告書
         </button>
         <button id="tabBtnWork" onclick="switchTab('work')" class="flex items-center px-6 py-3 rounded-t-lg font-bold text-sm transition-colors bg-gray-200 text-gray-500 hover:bg-gray-300 border-t-4 border-transparent">
-          <i data-lucide="file-text" class="w-5 h-5 mr-2"></i>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-5 h-5 mr-2"><use href="#icon-file-text"></use></svg>
           作業報告書
         </button>
       </div>
       <button onclick="openResetModal()" class="flex items-center px-4 py-2.5 mb-1 bg-red-50 text-red-600 hover:bg-red-100 hover:text-red-700 rounded-lg text-xs font-bold transition-colors border border-red-200 shadow-sm">
-        <i data-lucide="file-plus" class="w-4 h-4 mr-1.5"></i>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-4 h-4 mr-1.5"><use href="#icon-file-plus"></use></svg>
         新規案件 (リセット)
       </button>
     </div>
@@ -120,7 +135,7 @@
               
               <div class="flex items-center space-x-2">
                 <h3 class="font-bold text-blue-900 flex items-center">
-                  <i data-lucide="upload" class="w-4 h-4 mr-1"></i>
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-4 h-4 mr-1"><use href="#icon-upload"></use></svg>
                   アップロード済み (<span id="imageCount">0</span>枚)
                 </h3>
                 <button id="selectAllBtn" onclick="toggleSelectAll()" class="hidden text-xs text-blue-600 hover:text-blue-800 underline bg-white px-2 py-0.5 rounded border border-blue-200">
@@ -160,11 +175,11 @@
               <input type="file" id="fileInput" accept="image/*" multiple class="hidden" onchange="handleImageUpload(event)"/>
               
               <button id="btnOrganize" onclick="organizeImagesWithGemini()" class="px-4 py-2 bg-purple-600 text-white hover:bg-purple-700 rounded font-medium shadow-sm transition-colors text-sm flex items-center disabled:bg-purple-300 disabled:cursor-not-allowed">
-                <!-- JSで中身を書き換えます -->
+                <!-- JSで書き換え -->
               </button>
 
               <button id="btnAddPhoto" onclick="document.getElementById('fileInput').click()" class="px-4 py-2 bg-blue-600 text-white hover:bg-blue-700 rounded font-medium shadow-sm transition-colors text-sm flex items-center disabled:bg-blue-400 disabled:cursor-wait">
-                <!-- JSで中身を書き換えます -->
+                <!-- JSで書き換え -->
               </button>
 
               <button id="btnClearPhotos" onclick="clearImages()" class="px-4 py-2 bg-white text-red-600 border border-red-200 hover:bg-red-50 rounded font-medium transition-colors text-sm disabled:opacity-50">
@@ -191,7 +206,10 @@
           
           <!-- 左カラム：現場詳細情報 -->
           <div class="bg-gray-50 p-4 rounded-lg border border-gray-200 space-y-3">
-            <h3 class="font-bold text-gray-700 flex items-center mb-2"><i data-lucide="check-square" class="w-4 h-4 mr-1"></i>現場・依頼情報</h3>
+            <h3 class="font-bold text-gray-700 flex items-center mb-2">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-4 h-4 mr-1"><use href="#icon-check-square"></use></svg>
+              現場・依頼情報
+            </h3>
             <div class="grid grid-cols-2 gap-2">
               <div>
                 <label class="block text-xs font-medium text-gray-600">依頼日</label>
@@ -219,9 +237,12 @@
           <!-- 右カラム：報告内容とAI生成 -->
           <div class="bg-green-50 p-4 rounded-lg border border-green-100 flex flex-col">
             <div class="flex justify-between items-center mb-2">
-              <h3 class="font-bold text-green-800 flex items-center"><i data-lucide="pen-tool" class="w-4 h-4 mr-1"></i>報告内容</h3>
+              <h3 class="font-bold text-green-800 flex items-center">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-4 h-4 mr-1"><use href="#icon-pen-tool"></use></svg>
+                報告内容
+              </h3>
               <button id="btnGenerateReport" onclick="generateWorkReportWithGemini()" class="bg-green-600 hover:bg-green-700 text-white text-xs px-3 py-1.5 rounded flex items-center shadow-sm disabled:opacity-50" title="アップロード済みの写真から原因と処理方法を推測します">
-                <!-- JSで中身を書き換えます -->
+                <!-- JSで書き換え -->
               </button>
             </div>
             <div class="space-y-3 flex-grow">
@@ -244,7 +265,8 @@
           <div class="md:col-span-2 bg-gray-50 p-4 rounded-lg border border-gray-200">
             <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-3">
               <label class="block text-sm font-medium text-gray-700 flex items-center mb-2 sm:mb-0">
-                <i data-lucide="pen-tool" class="w-4 h-4 mr-1"></i>お客様署名・店舗印 (画像)
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-4 h-4 mr-1"><use href="#icon-pen-tool"></use></svg>
+                お客様署名・店舗印 (画像)
               </label>
               <div class="flex flex-col items-start sm:items-end">
                 <input type="file" accept="image/*" multiple onchange="handleSignAndStampUpload(event)" class="text-xs mb-1" />
@@ -263,14 +285,16 @@
                 </div>
                 <div id="signPreviewContainer" class="flex items-center h-full relative hidden">
                   <img id="signPreviewImg" src="" alt="sign" class="max-h-full object-contain pr-6" />
-                  <button onclick="event.stopPropagation(); removeSignOrStamp('sign');" class="absolute top-1 right-1 bg-gray-200 hover:bg-red-100 text-red-600 rounded p-1 transition-colors" title="削除"><i data-lucide="x" class="w-4 h-4"></i></button>
+                  <button onclick="event.stopPropagation(); removeSignOrStamp('sign');" class="absolute top-1 right-1 bg-gray-200 hover:bg-red-100 text-red-600 rounded p-1 transition-colors" title="削除">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-4 h-4"><use href="#icon-x"></use></svg>
+                  </button>
                 </div>
                 <span id="signPlaceholder" class="text-xs text-gray-300 text-center w-full block">クリックして画像を選択</span>
               </div>
               
               <!-- 入れ替えボタン -->
               <button onclick="swapSignAndStamp()" class="p-2 bg-gray-200 hover:bg-gray-300 rounded-full transition-colors text-gray-600 shadow-sm" title="署名と印鑑を入れ替える">
-                <i data-lucide="arrow-right-left" class="w-4 h-4"></i>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-4 h-4"><use href="#icon-arrow-right-left"></use></svg>
               </button>
 
               <!-- 印鑑枠 -->
@@ -282,7 +306,9 @@
                 </div>
                 <div id="stampPreviewContainer" class="flex items-center h-full relative hidden">
                   <img id="stampPreviewImg" src="" alt="stamp" class="max-h-full max-w-full object-contain pr-6" />
-                  <button onclick="event.stopPropagation(); removeSignOrStamp('stamp');" class="absolute top-1 right-1 bg-gray-200 hover:bg-red-100 text-red-600 rounded p-1 transition-colors" title="削除"><i data-lucide="x" class="w-4 h-4"></i></button>
+                  <button onclick="event.stopPropagation(); removeSignOrStamp('stamp');" class="absolute top-1 right-1 bg-gray-200 hover:bg-red-100 text-red-600 rounded p-1 transition-colors" title="削除">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-4 h-4"><use href="#icon-x"></use></svg>
+                  </button>
                 </div>
                 <span id="stampPlaceholder" class="text-xs text-gray-300 text-center w-full block">クリックして画像を選択</span>
               </div>
@@ -296,7 +322,7 @@
       <div class="flex justify-center border-t pt-4 mt-2">
         <button id="btnDownloadPDF" onclick="handleDownloadPDF()" class="flex items-center px-8 py-3 text-white text-lg rounded-full font-bold shadow-md transition-colors bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed">
           <span id="textDownloadPDF" class="flex items-center">
-            <!-- JSで中身を書き換えます -->
+            <!-- JSで書き換え -->
           </span>
         </button>
       </div>
@@ -316,7 +342,7 @@
 
       <!-- 📝 作業報告書のプレビュー -->
       <div id="pdfWorkContainer" class="hidden">
-        <div id="workReportRef" class="pdf-page" style="padding: 15mm 20mm; position: relative;">
+        <div id="workReportRef" class="pdf-page" style="padding: 15mm 20mm; position: relative; height: 296mm;">
           <!-- ヘッダー -->
           <h1 style="font-size: 24px; font-weight: 800; text-align: center; letter-spacing: 0.2em; margin-bottom: 16px; color: #111827; border-bottom: 2px solid #111827; padding-bottom: 8px; margin: 0 40px 16px 40px;">作業報告書</h1>
           
@@ -484,7 +510,6 @@
         btnDownload.classList.replace('hover:bg-blue-700', 'hover:bg-green-700');
       }
       updateDownloadButtonState();
-      updateIcons();
     }
 
     // --- Modal & Reset ---
@@ -510,7 +535,6 @@
       document.getElementById('fileInput').value = '';
       document.getElementById('signInput').value = '';
       document.getElementById('stampInput').value = '';
-      
       document.querySelectorAll('input[type="text"], input[type="date"], textarea').forEach(el => el.value = '');
       
       closeResetModal();
@@ -746,7 +770,6 @@
               if (imgRef) imgRef.label = label;
               updateUI();
             } catch (err) {
-              console.error(err);
               const imgRef = state.images.find(img => img.id === item.id);
               if (imgRef) imgRef.label = state.isEstimateMode ? '現場調査' : '完了';
               updateUI();
@@ -754,7 +777,6 @@
           }));
         }
       } catch (error) {
-        console.error(error);
         alert("画像の処理中にエラーが発生しました。");
       } finally {
         state.isAnalyzing = false;
@@ -819,7 +841,7 @@
       updateUI();
     }
 
-    // --- API Interactions ---
+    // --- API Interactions (Fixed Retry Logic) ---
     async function analyzeImageWithGemini(base64String, mimeType, imageIndex, totalImagesCount) {
       const prompt = `
 あなたは設備メンテナンスの専門家です。この写真は店舗でのメンテナンス作業の写真です。
@@ -846,18 +868,23 @@ ${state.isEstimateMode ? `
 
       const payload = { contents: [{ role: "user", parts: [{ text: prompt }, { inlineData: { mimeType, data: base64String } }] }] };
       const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${apiKey}`;
+      const delays = [1000, 2000, 4000, 8000, 16000]; // 5回の指数バックオフ
 
-      for (let i = 0; i < 3; i++) {
+      for (let i = 0; i < delays.length; i++) {
         try {
           const response = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
-          if (!response.ok) throw new Error(`HTTP error`);
+          if (!response.ok) throw new Error(`HTTP error ${response.status}`);
           const result = await response.json();
           const text = result.candidates?.[0]?.content?.parts?.[0]?.text?.trim();
-          for (const label of labelOptions) if (text && text.includes(label)) return label;
+          for (const label of labelOptions) {
+            if (text && text.includes(label)) return label;
+          }
           return state.isEstimateMode ? '現場調査' : '施工後';
         } catch (error) {
-          console.error(`AI解析エラー:`, error);
-          await new Promise(r => setTimeout(r, 1000 * Math.pow(2, i))); 
+          if (i === delays.length - 1) {
+             return state.isEstimateMode ? '現場調査' : '施工後';
+          }
+          await new Promise(r => setTimeout(r, delays[i])); 
         }
       }
       return state.isEstimateMode ? '現場調査' : '施工後';
@@ -891,28 +918,40 @@ ${state.isEstimateMode ? `
 
         const payload = { contents: [{ role: "user", parts: [{ text: prompt }, ...imageParts] }] };
         const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${apiKey}`;
+        const delays = [1000, 2000, 4000, 8000, 16000];
 
-        const response = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
-        if (!response.ok) throw new Error("API Request Failed");
-        const result = await response.json();
-        let text = result.candidates?.[0]?.content?.parts?.[0]?.text?.trim();
-        text = text.replace(/```json/g, '').replace(/```/g, '').trim();
-        const parsed = JSON.parse(text);
+        let success = false;
+        for (let i = 0; i < delays.length; i++) {
+          try {
+            const response = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
+            if (!response.ok) throw new Error(`HTTP error ${response.status}`);
+            const result = await response.json();
+            let text = result.candidates?.[0]?.content?.parts?.[0]?.text?.trim();
+            text = text.replace(/```json/g, '').replace(/```/g, '').trim();
+            const parsed = JSON.parse(text);
 
-        const newImagesList = [];
-        parsed.forEach(item => {
-          if (item.is_needed) {
-            const originalImg = state.images.find(img => img.id === item.id);
-            if (originalImg) newImagesList.push({ ...originalImg, label: item.label });
+            const newImagesList = [];
+            parsed.forEach(item => {
+              if (item.is_needed) {
+                const originalImg = state.images.find(img => img.id === item.id);
+                if (originalImg) newImagesList.push({ ...originalImg, label: item.label });
+              }
+            });
+            state.images.forEach(img => {
+              if (!parsed.find(item => item.id === img.id)) newImagesList.push(img);
+            });
+            state.images = newImagesList;
+            success = true;
+            break;
+          } catch (error) {
+            if (i === delays.length - 1) throw error;
+            await new Promise(r => setTimeout(r, delays[i])); 
           }
-        });
-        state.images.forEach(img => {
-          if (!parsed.find(item => item.id === img.id)) newImagesList.push(img);
-        });
-        state.images = newImagesList;
+        }
+        if(!success) throw new Error("API Request Failed after retries");
+
       } catch (error) {
-        console.error("AI自動整理エラー:", error);
-        alert("AIによる自動整理に失敗しました。");
+        alert("AIによる自動整理に失敗しました。少し時間をおいて再度お試しください。");
       } finally {
         state.isOrganizing = false; updateUI();
       }
@@ -943,19 +982,31 @@ ${state.isEstimateMode ? `
 
         const payload = { contents: [{ role: "user", parts: [{ text: prompt }, ...imageParts] }] };
         const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${apiKey}`;
-        const response = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
+        const delays = [1000, 2000, 4000, 8000, 16000];
         
-        if (!response.ok) throw new Error("API Request Failed");
-        const result = await response.json();
-        let text = result.candidates?.[0]?.content?.parts?.[0]?.text?.trim();
-        text = text.replace(/```json/g, '').replace(/```/g, '').trim();
-        const parsed = JSON.parse(text);
+        let success = false;
+        for (let i = 0; i < delays.length; i++) {
+          try {
+            const response = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
+            if (!response.ok) throw new Error(`HTTP error ${response.status}`);
+            const result = await response.json();
+            let text = result.candidates?.[0]?.content?.parts?.[0]?.text?.trim();
+            text = text.replace(/```json/g, '').replace(/```/g, '').trim();
+            const parsed = JSON.parse(text);
 
-        if (parsed.cause) { state.cause = parsed.cause; document.getElementById('inputCause').value = parsed.cause; }
-        if (parsed.method) { state.method = parsed.method; document.getElementById('inputMethod').value = parsed.method; }
+            if (parsed.cause) { state.cause = parsed.cause; document.getElementById('inputCause').value = parsed.cause; }
+            if (parsed.method) { state.method = parsed.method; document.getElementById('inputMethod').value = parsed.method; }
+            success = true;
+            break;
+          } catch (error) {
+             if (i === delays.length - 1) throw error;
+             await new Promise(r => setTimeout(r, delays[i])); 
+          }
+        }
+        if(!success) throw new Error("API Request Failed after retries");
+
       } catch (error) {
-        console.error("テキスト生成エラー:", error);
-        alert("AIによる推測に失敗しました。");
+        alert("AIによる推測に失敗しました。少し時間をおいて再度お試しください。");
       } finally {
         state.isDrafting = false; updateUI();
       }
@@ -970,7 +1021,6 @@ ${state.isEstimateMode ? `
       
       state.isGenerating = true;
       updateDownloadButtonState();
-      updateIcons(); // アイコン再描画
 
       const element = document.getElementById(targetElementId);
       const prefix = state.activeTab === 'photo' ? '写真報告書' : '作業報告書';
@@ -980,18 +1030,16 @@ ${state.isEstimateMode ? `
         filename:     `${state.siteName || '名称未設定'}_${prefix}.pdf`,
         image:        { type: 'jpeg', quality: 0.8 },
         html2canvas:  { scale: 2, useCORS: true, logging: false },
-        jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' }
+        jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' },
+        pagebreak:    { mode: 'css', before: '.html2pdf__page-break' } // ★ここで確実な改ページを指定
       };
 
       html2pdf().set(opt).from(element).save().then(() => {
         state.isGenerating = false;
         updateDownloadButtonState();
-        updateIcons();
       }).catch((err) => {
-        console.error('PDF生成エラー:', err);
         state.isGenerating = false;
         updateDownloadButtonState();
-        updateIcons();
         alert('PDFの生成に失敗しました。');
       });
     }
@@ -1004,10 +1052,10 @@ ${state.isEstimateMode ? `
       
       btn.disabled = state.isGenerating || noPhotos;
       if (state.isGenerating) {
-        text.innerHTML = '<i data-lucide="loader-2" class="w-6 h-6 mr-3 text-white animate-spin"></i>PDF生成中...';
+        text.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-6 h-6 mr-3 text-white animate-spin"><use href="#icon-loader"></use></svg>PDF生成中...';
       } else {
         const type = state.activeTab === 'photo' ? '写真報告書' : '作業報告書';
-        text.innerHTML = `<i data-lucide="download" class="w-6 h-6 mr-2"></i>${type}のPDFを出力`;
+        text.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-6 h-6 mr-2"><use href="#icon-download"></use></svg>${type}のPDFを出力`;
       }
     }
 
@@ -1023,22 +1071,22 @@ ${state.isEstimateMode ? `
       btnClear.disabled = disableCondition || state.images.length === 0;
 
       if(state.isOrganizing){
-        btnOrg.innerHTML = `<i data-lucide="loader-2" class="w-4 h-4 mr-2 animate-spin"></i><span>AI整理中...</span>`;
+        btnOrg.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-4 h-4 mr-2 animate-spin"><use href="#icon-loader"></use></svg><span>AI整理中...</span>`;
       } else {
-        btnOrg.innerHTML = `<i data-lucide="sparkles" class="w-4 h-4 mr-2"></i><span>AIおまかせ整理</span>`;
+        btnOrg.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-4 h-4 mr-2"><use href="#icon-sparkles"></use></svg><span>AIおまかせ整理</span>`;
       }
 
       if(state.isAnalyzing){
-        btnAdd.innerHTML = `<i data-lucide="loader-2" class="w-4 h-4 mr-2 animate-spin"></i><span>解析中...</span>`;
+        btnAdd.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-4 h-4 mr-2 animate-spin"><use href="#icon-loader"></use></svg><span>解析中...</span>`;
       } else {
-        btnAdd.innerHTML = `<i data-lucide="plus" class="w-4 h-4 mr-2"></i><span>+ 写真を追加する</span>`;
+        btnAdd.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-4 h-4 mr-2"><use href="#icon-plus"></use></svg><span>+ 写真を追加する</span>`;
       }
 
       btnGen.disabled = state.isDrafting || state.images.length === 0;
       if(state.isDrafting) {
-        btnGen.innerHTML = `<i data-lucide="loader-2" class="w-3 h-3 mr-1 animate-spin"></i><span>AI生成中...</span>`;
+        btnGen.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-3 h-3 mr-1 animate-spin"><use href="#icon-loader"></use></svg><span>AI生成中...</span>`;
       } else {
-        btnGen.innerHTML = `<i data-lucide="sparkles" class="w-3 h-3 mr-1"></i><span>AIで自動入力</span>`;
+        btnGen.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-3 h-3 mr-1"><use href="#icon-sparkles"></use></svg><span>AIで自動入力</span>`;
       }
     }
 
@@ -1094,14 +1142,22 @@ ${state.isEstimateMode ? `
             <div class="absolute top-1.5 left-1.5 flex items-center space-x-1.5 z-20">
               <input type="checkbox" ${isSelected ? 'checked' : ''} onchange="toggleSelection('${img.id}')" class="w-4 h-4 md:w-5 md:h-5 text-blue-600 bg-white border-gray-300 rounded cursor-pointer shadow-sm" title="複数選択してまとめてドラッグ" />
               <div class="hidden group-hover:flex space-x-1">
-                <button onclick="moveImage(${index}, 'left')" ${index === 0 ? 'disabled' : ''} class="bg-gray-600 text-white rounded p-1 opacity-70 hover:opacity-100 disabled:opacity-0 transition-opacity"><i data-lucide="chevron-left" class="w-3.5 h-3.5"></i></button>
-                <button onclick="moveImage(${index}, 'right')" ${index === state.images.length - 1 ? 'disabled' : ''} class="bg-gray-600 text-white rounded p-1 opacity-70 hover:opacity-100 disabled:opacity-0 transition-opacity"><i data-lucide="chevron-right" class="w-3.5 h-3.5"></i></button>
+                <button onclick="moveImage(${index}, 'left')" ${index === 0 ? 'disabled' : ''} class="bg-gray-600 text-white rounded p-1 opacity-70 hover:opacity-100 disabled:opacity-0 transition-opacity">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-3.5 h-3.5"><use href="#icon-chevron-left"></use></svg>
+                </button>
+                <button onclick="moveImage(${index}, 'right')" ${index === state.images.length - 1 ? 'disabled' : ''} class="bg-gray-600 text-white rounded p-1 opacity-70 hover:opacity-100 disabled:opacity-0 transition-opacity">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-3.5 h-3.5"><use href="#icon-chevron-right"></use></svg>
+                </button>
               </div>
             </div>
             
             <div class="absolute -top-2 -right-2 flex space-x-1 z-10 hidden group-hover:flex">
-              <button onclick="rotateImage('${img.id}')" class="bg-blue-500 text-white rounded-full p-1.5 shadow hover:bg-blue-600 transition-colors" title="90度回転"><i data-lucide="rotate-cw" class="w-3.5 h-3.5"></i></button>
-              <button onclick="removeImage('${img.id}')" class="bg-red-500 text-white rounded-full p-1.5 shadow hover:bg-red-600 transition-colors" title="削除"><i data-lucide="x" class="w-3.5 h-3.5"></i></button>
+              <button onclick="rotateImage('${img.id}')" class="bg-blue-500 text-white rounded-full p-1.5 shadow hover:bg-blue-600 transition-colors" title="90度回転">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-3.5 h-3.5"><use href="#icon-rotate-cw"></use></svg>
+              </button>
+              <button onclick="removeImage('${img.id}')" class="bg-red-500 text-white rounded-full p-1.5 shadow hover:bg-red-600 transition-colors" title="削除">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-3.5 h-3.5"><use href="#icon-x"></use></svg>
+              </button>
             </div>
             
             <div draggable="true" ondragstart="handleDragStart(event, ${index})" class="h-24 w-full bg-gray-100 flex items-center justify-center rounded overflow-hidden mb-2 cursor-move" onmouseenter="showHoverPreview(event, '${img.dataUrl}')" onmouseleave="hideHoverPreview()">
@@ -1109,14 +1165,14 @@ ${state.isEstimateMode ? `
             </div>
             
             <div class="flex items-center text-xs text-gray-600 bg-gray-100 rounded mb-2">
-              <i data-lucide="tag" class="w-3.5 h-3.5 ml-2 text-blue-500"></i>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-3.5 h-3.5 ml-2 text-blue-500"><use href="#icon-tag"></use></svg>
               <select onchange="handleLabelChange('${img.id}', this.value)" class="w-full p-1 bg-transparent border-none focus:outline-none focus:ring-0 text-xs font-medium cursor-pointer ${isAnalyzing ? 'text-gray-400 animate-pulse' : 'text-gray-800'}" ${isAnalyzing ? 'disabled' : ''}>
                 ${optionsHtml}
               </select>
             </div>
             
             <div class="flex items-center text-xs relative">
-              <i data-lucide="message-square" class="w-3.5 h-3.5 text-gray-400 absolute ml-2 pointer-events-none"></i>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-3.5 h-3.5 text-gray-400 absolute ml-2 pointer-events-none"><use href="#icon-message-square"></use></svg>
               <input type="text" placeholder="補足事項を入力..." value="${img.comment || ''}" oninput="handleCommentChange('${img.id}', this.value)" class="w-full pl-7 py-1 pr-1 border border-gray-300 rounded text-xs focus:ring-blue-500 focus:border-blue-500 bg-gray-50 cursor-text" />
             </div>
           </div>
@@ -1244,21 +1300,12 @@ ${state.isEstimateMode ? `
       }
     }
 
-    // アイコンの描画を更新する関数
-    function updateIcons() {
-      if (window.lucide) {
-        window.lucide.createIcons();
-      }
-    }
-
     function updateUI() {
       renderThumbnails();
       renderPhotoPdfPreview();
       renderWorkPdfPreview();
       updateButtonsState();
       updateDownloadButtonState();
-      // DOMの更新後にアイコンを再描画する
-      updateIcons();
     }
 
     // --- Init ---
