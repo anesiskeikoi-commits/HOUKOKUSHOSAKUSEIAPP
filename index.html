@@ -758,23 +758,25 @@
         state.images.push(...tempImages);
         updateUI();
 
-        const chunkSize = 3; 
-        for (let i = 0; i < tempImages.length; i += chunkSize) {
-          const chunk = tempImages.slice(i, i + chunkSize);
-          await Promise.all(chunk.map(async (item) => {
-            const base64Data = item.dataUrl.split(',')[1];
-            const mimeType = item.dataUrl.match(/data:(.*);base64/)[1];
-            try {
-              const label = await analyzeImageWithGemini(base64Data, mimeType, item.index, totalCount);
-              const imgRef = state.images.find(img => img.id === item.id);
-              if (imgRef) imgRef.label = label;
-              updateUI();
-            } catch (err) {
-              const imgRef = state.images.find(img => img.id === item.id);
-              if (imgRef) imgRef.label = state.isEstimateMode ? '現場調査' : '施工前'; // エラー時は施工前にして気付きやすく
-              updateUI();
-            }
-          }));
+        // ★修正ポイント1: chunk ごとに並列処理していましたが、
+        // APIのレート制限(Too Many Requests)でエラー落ちして精度が下がるのを防ぐため、
+        // 1枚ずつ丁寧に（少し間隔を空けて）AIにリクエストを送るように直列処理に変更します。
+        for (let i = 0; i < tempImages.length; i++) {
+          const item = tempImages[i];
+          const base64Data = item.dataUrl.split(',')[1];
+          const mimeType = item.dataUrl.match(/data:(.*);base64/)[1];
+          try {
+            const label = await analyzeImageWithGemini(base64Data, mimeType, item.index, totalCount);
+            const imgRef = state.images.find(img => img.id === item.id);
+            if (imgRef) imgRef.label = label;
+            updateUI();
+          } catch (err) {
+            const imgRef = state.images.find(img => img.id === item.id);
+            if (imgRef) imgRef.label = state.isEstimateMode ? '現場調査' : '施工前'; 
+            updateUI();
+          }
+          // ★次の画像解析までに少し待機してAPIのパンクを防ぐ
+          await new Promise(r => setTimeout(r, 600));
         }
       } catch (error) {
         alert("画像の処理中にエラーが発生しました。");
@@ -843,27 +845,27 @@
 
     // --- API Interactions (プロンプト大幅改善) ---
     async function analyzeImageWithGemini(base64String, mimeType, imageIndex, totalImagesCount) {
+      // ★修正ポイント2: 一番精度が良かった時のプロンプトを完全復元（＋トイレ修理のヒントを追加）
       const prompt = `
 あなたは設備メンテナンスの専門家です。
-この写真は店舗でのメンテナンス作業（例：給湯器などの内部部品交換、シャワーホース交換、トイレ詰まり修理、自動ドア修理、機器取付工事など）の写真です。
+この写真は店舗でのメンテナンス作業（例：給湯器などの内部部品交換、シャワーホース交換、トイレ、自動ドアの修理、機器取付・交換工事、見積用現場調査など）の写真です。
 写真の内容を判断し、以下の選択肢の中から最も適切なものを1つだけ（単語のみ）出力してください。
 選択肢: 現場調査, 点検, 施工前, 施工中, 施工後, 完了
 
 判断基準:
 - 現場調査: 見積作成や事前確認のための現状写真。破損箇所や現場の全体状況など。
 - 点検: 作業箇所の事前確認、異常の有無の調査、被害状況の記録など。
-- 施工前: 作業が始まる直前の状態。給湯器等のカバーを開けた直後の状態や、作業前の便器などは「施工前」と判定してください。
-- 施工中: 作業員の手（手袋など）や工具（ローポンプ、ドライバー等）が写っている、作業や交換の途中の状態。
-- 施工後: 部品交換や修理などの物理的な作業が終わった直後の状態。新しい部品が取り付いた状態や、詰まりが抜けた便器などは「施工後」と判定してください。
-- 完了: 通水テスト（便器に水が流れている等）、通電テスト、動作確認などの最終チェックを行っている状態は「完了」と判定してください。
+- 施工前: 作業が始まる直前の状態。★給湯器などの内部部品交換の場合、カバーを開けた直後の最初の状態（部品を外す前）は「施工前」と判定してください。シャワーホースなどの場合、古い部品がついている状態は「施工前」と判定してください。
+- 施工中: 作業員の手や工具が写っている、部品や配線を外したり取り付けたりしている交換途中の状態。★トイレ詰まり修理の場合、手袋やローポンプなどの工具を使って作業している最中＝「施工中」。
+- 施工後: 部品交換や修理などの物理的な作業が終わった直後の状態。新しい部品が取り付けられたり、所定の位置に収まった状態の写真は「施工後」と判定してください。★トイレ詰まり修理の場合、詰まりが解消した直後の便器＝「施工後」。
+- 完了: 通水テスト、通電テスト、動作確認などの最終チェックを行っている状態、または作業完了後の全体的な確認状態の写真は「完了」と判定してください。★トイレ詰まり修理の場合、最後に水を流してテストしている様子＝「完了」。
 
 ${state.isEstimateMode ? `
 ★超重要（見積用モード）: 今回のアップロードは【見積作成のための現場調査】です。作業自体はまだ行われていません。したがって、基本的にはすべての写真を「現場調査」と判定してください。作業中の様子（施工中）や新しい部品（施工後）が明確に写っていない限り、他のラベルは選ばないでください。
 ` : `
-★超重要（通常施工モード）: 今回は実際の作業報告なので、「現場調査」ラベルは原則として使用しないでください。
 追加ヒント（極めて重要）:
 写真は時系列でアップロードされます。今回判定する写真は、全体の中で【${imageIndex + 1}枚目 / 全${totalImagesCount}枚中】の写真です。
-・1枚目や前半の画像は「点検」や「施工前」
+・1枚目や前半の画像は「現場調査」や「点検」や「施工前」
 ・中盤の画像は「施工中」
 ・最後から2番目付近の画像は「施工後」
 ・一番最後の画像は「完了」になる傾向があります。
