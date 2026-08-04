@@ -342,9 +342,9 @@
 
       <!-- 📝 作業報告書のプレビュー -->
       <div id="pdfWorkContainer" class="hidden">
-        <div id="workReportRef" class="pdf-page" style="padding: 15mm 20mm; position: relative; height: 296mm;">
+        <div id="workReportRef" class="pdf-page" style="padding: 10mm 15mm; position: relative; height: 296mm;">
           <!-- ヘッダー -->
-          <h1 style="font-size: 24px; font-weight: 800; text-align: center; letter-spacing: 0.2em; margin-bottom: 16px; color: #111827; border-bottom: 2px solid #111827; padding-bottom: 8px; margin: 0 40px 16px 40px;">作業報告書</h1>
+          <h1 style="font-size: 24px; font-weight: 800; text-align: center; letter-spacing: 0.2em; margin-bottom: 16px; color: #111827; border-bottom: 2px solid #111827; padding-bottom: 8px; margin: 0 20px 16px 20px;">作業報告書</h1>
           
           <div style="display: flex; justify-content: space-between; font-size: 13px; margin-bottom: 16px; color: #1f2937;">
             <div style="display: flex; flex-direction: column; gap: 4px;">
@@ -844,27 +844,31 @@
     // --- API Interactions (プロンプト大幅改善) ---
     async function analyzeImageWithGemini(base64String, mimeType, imageIndex, totalImagesCount) {
       const prompt = `
-あなたは設備メンテナンスの専門家です。この写真は店舗でのメンテナンス作業の写真です。
+あなたは設備メンテナンスの専門家です。
+この写真は店舗でのメンテナンス作業（例：給湯器などの内部部品交換、シャワーホース交換、トイレ詰まり修理、自動ドア修理、機器取付工事など）の写真です。
 写真の内容を判断し、以下の選択肢の中から最も適切なものを1つだけ（単語のみ）出力してください。
 選択肢: 現場調査, 点検, 施工前, 施工中, 施工後, 完了
 
-【判断基準】
-- 現場調査: 見積作成や事前確認のための現状写真。
-- 点検: 作業箇所の事前確認。
-- 施工前: 作業が始まる直前の状態。★便器だけの写真や、カバーを開けた直後は「施工前」です。
-- 施工中: 作業員の手（ゴム手袋など）や工具（ローポンプ、ドライバー等）がハッキリ写っている写真は、絶対に「施工中」と判定してください。
-- 施工後: 工具などがなくなり、物理的な作業が終わった直後（詰まりが抜けた直後の便器など）。
-- 完了: 通水テスト（便器に水が流れている様子など）や最終チェックの様子は「完了」と判定してください。
+判断基準:
+- 現場調査: 見積作成や事前確認のための現状写真。破損箇所や現場の全体状況など。
+- 点検: 作業箇所の事前確認、異常の有無の調査、被害状況の記録など。
+- 施工前: 作業が始まる直前の状態。給湯器等のカバーを開けた直後の状態や、作業前の便器などは「施工前」と判定してください。
+- 施工中: 作業員の手（手袋など）や工具（ローポンプ、ドライバー等）が写っている、作業や交換の途中の状態。
+- 施工後: 部品交換や修理などの物理的な作業が終わった直後の状態。新しい部品が取り付いた状態や、詰まりが抜けた便器などは「施工後」と判定してください。
+- 完了: 通水テスト（便器に水が流れている等）、通電テスト、動作確認などの最終チェックを行っている状態は「完了」と判定してください。
 
 ${state.isEstimateMode ? `
-★超重要（見積用モード）: 基本的に「現場調査」と判定。明確な作業・完了がない限り他を選ばない。
+★超重要（見積用モード）: 今回のアップロードは【見積作成のための現場調査】です。作業自体はまだ行われていません。したがって、基本的にはすべての写真を「現場調査」と判定してください。作業中の様子（施工中）や新しい部品（施工後）が明確に写っていない限り、他のラベルは選ばないでください。
 ` : `
-★超重要（通常施工モード）: 実際の作業報告なので「現場調査」は使用しない。作業前は「点検」か「施工前」。
-追加ヒント: 全体の中で【${imageIndex + 1}枚目 / 全${totalImagesCount}枚中】の写真。
-・前半は「点検」「施工前」
-・中盤は「施工中」
-・最後から2番目付近は「施工後」
-・最後は「完了」の傾向。順番情報を最優先しつつ、画像に「手や工具」「流れる水」が写っていればその特徴を優先してください。
+★超重要（通常施工モード）: 今回は実際の作業報告なので、「現場調査」ラベルは原則として使用しないでください。
+追加ヒント（極めて重要）:
+写真は時系列でアップロードされます。今回判定する写真は、全体の中で【${imageIndex + 1}枚目 / 全${totalImagesCount}枚中】の写真です。
+・1枚目や前半の画像は「点検」や「施工前」
+・中盤の画像は「施工中」
+・最後から2番目付近の画像は「施工後」
+・一番最後の画像は「完了」になる傾向があります。
+★もし全ての写真が似たような構図であっても、この【写真の順番（何枚目か）】の情報を最優先の手がかりとし、最初のほうなら「施工前」、最後付近なら「施工後」や「完了」と空気を読んで判断してください。
+★超重要（「施工後」と「完了」の優先順位）: 「施工後」か「完了」か迷った場合、またはテストしている様子が明確でない場合は、安全のため必ず「施工後」としてください。
 `}
       `;
 
@@ -904,20 +908,30 @@ ${state.isEstimateMode ? `
         });
 
         const prompt = `あなたは設備メンテナンスの専門家です。
-ユーザーがアップロードしたすべての現場写真を比較し、正しい時系列に並び替え、不必要な写真を不要と判断し、適切なラベルを再判定してください。
-【判断するラベル】現場調査, 点検, 施工前, 施工中, 施工後, 完了
+ユーザーがアップロードしたすべての現場写真を相互に比較・分析し、「作業の正しい時系列」になるように並び替え、現場に関係ない写真や不鮮明な写真を「不要」と判断し、並び替えた後の順序に基づいて適切な「ラベル」を再判定してください。
+
+【判断するラベル】
+現場調査, 点検, 施工前, 施工中, 施工後, 完了
+
 【指示事項】
 ${state.isEstimateMode ? `
-・★超重要（見積用モード）: 見積作成用なので、原則すべての適切な写真を「現場調査」として判定。
+・★超重要（見積用モード）: 今回は見積作成のための「現場調査（現調）」の写真です。実際の作業（施工）は行われていません。したがって、原則としてすべての適切な写真を「現場調査」として判定してください。作業中の手や新しい部品が写っていない限り、「施工中」「施工後」「完了」は使用しないでください。
 ` : `
-・★超重要（通常施工モード）: 実際の作業報告なので「現場調査」は使用不可。
-・時間の流れ（事前確認 → 作業直前 → 作業中 → 部品交換完了/詰まり解消 → 通水テスト等最終チェック）を推測。
-・全体の流れの中での順番を最優先。
+・★超重要（通常施工モード）: 実際の作業報告なので「現場調査」は使用しないでください。作業前は「点検」または「施工前」を選んでください。
+・すべての画像を総合的に見て、時間の流れ（事前確認(点検/施工前) → 分解・作業中(施工中) → 部品交換完了/詰まり解消(施工後) → 通水・動作テスト等の最終チェック(完了)）を推測してください。
+・★超重要（ラベルの再評価）: 単独の画像の特徴だけで判断せず、並び替えた後の「全体の流れの中での順番」を最優先してラベルを決定してください。前半に「施工後」が来たり、後半に「施工前」や「点検」が来ることは絶対にあり得ません。時系列の整合性を厳密に守ってください。
+・★事例（シャワーホース交換など）: 古いホースや部品がついている状態＝「施工前」。外している・新しいものを接続している最中＝「施工中」。新しいものが完全に取り付けられた状態＝「施工後」。最後に水を出して漏れがないか確認している状態＝「完了」。
 ・★事例（トイレ詰まり修理）: 作業前の便器＝「施工前」。手袋やローポンプなどの工具を使って作業している最中＝「施工中」。詰まりが解消した直後の便器＝「施工後」。最後に水を流してテストしている様子＝「完了」。
+・★超重要（「施工後」と「完了」の優先順位）: 画像が「施工後」か「完了」か区別がつきにくい場合、または迷った場合は、安全のため必ず「施工後」を選択してください。水を出している、メーターを測っているなど明確なテストの様子が写っていない限り「完了」にはしないでください。
 `}
-・不要な画像（関係ない風景、ピンボケ等）は is_needed: false に。
-出力は以下のJSON配列形式のみ。Markdownは含めない。
-[ { "id": "画像ID", "label": "判断ラベル", "is_needed": true/false } ]`;
+・不要な画像（関係ない風景、床だけ、ひどいピンボケ、全く同じ写真の重複など）は is_needed: false としてください。
+・正しい順番になるように配列の順序を並べ替えてください。
+・出力は必ず以下のJSON配列形式のみとしてください。Markdown(\`\`\`jsonなど)は絶対に含めないでください。
+
+[
+  { "id": "（画像ID）", "label": "（判断したラベル）", "is_needed": true },
+  { "id": "（画像ID）", "label": "（判断したラベル）", "is_needed": false }
+]`;
 
         const payload = { contents: [{ role: "user", parts: [{ text: prompt }, ...imageParts] }] };
         const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${apiKey}`;
@@ -1025,6 +1039,10 @@ ${state.isEstimateMode ? `
       state.isGenerating = true;
       updateDownloadButtonState();
 
+      // ★ スクロール位置によるPDF化のズレを防止するため、一時的に画面トップへ
+      const currentScrollY = window.scrollY;
+      window.scrollTo(0, 0);
+
       const element = document.getElementById(targetElementId);
       const prefix = state.activeTab === 'photo' ? '写真報告書' : '作業報告書';
       
@@ -1032,17 +1050,19 @@ ${state.isEstimateMode ? `
         margin:       0,
         filename:     `${state.siteName || '名称未設定'}_${prefix}.pdf`,
         image:        { type: 'jpeg', quality: 0.8 },
-        html2canvas:  { scale: 2, useCORS: true, logging: false },
+        html2canvas:  { scale: 2, useCORS: true, logging: false, scrollY: 0, scrollX: 0 }, // ★ キャプチャ基準を0に固定
         jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' },
-        pagebreak:    { mode: 'css', before: '.html2pdf__page-break' } // ★ここで確実な改ページを指定
+        pagebreak:    { mode: 'css', before: '.html2pdf__page-break' }
       };
 
       html2pdf().set(opt).from(element).save().then(() => {
         state.isGenerating = false;
         updateDownloadButtonState();
+        window.scrollTo(0, currentScrollY); // ★ 処理が終わったら元のスクロール位置に戻す
       }).catch((err) => {
         state.isGenerating = false;
         updateDownloadButtonState();
+        window.scrollTo(0, currentScrollY); // ★ エラー時も戻す
         alert('PDFの生成に失敗しました。');
       });
     }
