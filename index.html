@@ -465,7 +465,15 @@
     };
 
     const labelOptions = ['現場調査', '点検', '施工前', '施工中', '施工後', '完了'];
-    const apiKey = ""; // APIキー設定（環境側で提供されます）
+    
+    // ==========================================
+    // ★超重要：AIを外部（GitHub Pages等）で動かすための設定★
+    // Google AI Studio (https://aistudio.google.com/app/apikey) で
+    // 無料のAPIキーを取得し、以下の "" の中に貼り付けてください！
+    // 例: const apiKey = "AIzaSyBxxxxxxxxxxxxxxxxx";
+    // ==========================================
+    const apiKey = ""; 
+    
     let highlightTimeout = null;
 
     // --- Drag and Drop Variables ---
@@ -758,25 +766,32 @@
         state.images.push(...tempImages);
         updateUI();
 
-        // ★修正ポイント1: chunk ごとに並列処理していましたが、
-        // APIのレート制限(Too Many Requests)でエラー落ちして精度が下がるのを防ぐため、
-        // 1枚ずつ丁寧に（少し間隔を空けて）AIにリクエストを送るように直列処理に変更します。
         for (let i = 0; i < tempImages.length; i++) {
           const item = tempImages[i];
           const base64Data = item.dataUrl.split(',')[1];
           const mimeType = item.dataUrl.match(/data:(.*);base64/)[1];
-          try {
-            const label = await analyzeImageWithGemini(base64Data, mimeType, item.index, totalCount);
+          
+          if (!apiKey) {
+            // ★ APIキーがない場合はAI判定を完全にスキップし、一瞬でデフォルトラベルを付与する
             const imgRef = state.images.find(img => img.id === item.id);
-            if (imgRef) imgRef.label = label;
+            if (imgRef) {
+              imgRef.label = state.isEstimateMode ? '現場調査' : '施工前';
+            }
             updateUI();
-          } catch (err) {
-            const imgRef = state.images.find(img => img.id === item.id);
-            if (imgRef) imgRef.label = state.isEstimateMode ? '現場調査' : '施工前'; 
-            updateUI();
+          } else {
+            // APIキーがある場合のみAIに判定してもらう
+            try {
+              const label = await analyzeImageWithGemini(base64Data, mimeType, item.index, totalCount);
+              const imgRef = state.images.find(img => img.id === item.id);
+              if (imgRef) imgRef.label = label;
+              updateUI();
+            } catch (err) {
+              const imgRef = state.images.find(img => img.id === item.id);
+              if (imgRef) imgRef.label = state.isEstimateMode ? '現場調査' : '施工前'; 
+              updateUI();
+            }
+            await new Promise(r => setTimeout(r, 600)); // APIのパンク防止待機
           }
-          // ★次の画像解析までに少し待機してAPIのパンクを防ぐ
-          await new Promise(r => setTimeout(r, 600));
         }
       } catch (error) {
         alert("画像の処理中にエラーが発生しました。");
@@ -845,7 +860,8 @@
 
     // --- API Interactions (プロンプト大幅改善) ---
     async function analyzeImageWithGemini(base64String, mimeType, imageIndex, totalImagesCount) {
-      // ★修正ポイント2: 一番精度が良かった時のプロンプトを完全復元（＋トイレ修理のヒントを追加）
+      if (!apiKey) return state.isEstimateMode ? '現場調査' : '施工前';
+
       const prompt = `
 あなたは設備メンテナンスの専門家です。
 この写真は店舗でのメンテナンス作業（例：給湯器などの内部部品交換、シャワーホース交換、トイレ詰まり修理、自動ドア修理、機器取付工事など）の写真です。
@@ -900,6 +916,10 @@ ${state.isEstimateMode ? `
 
     async function organizeImagesWithGemini() {
       if (state.images.length < 2) return;
+      if (!apiKey) {
+        alert("AI機能を利用するにはコード内のAPIキーを設定してください。");
+        return;
+      }
       state.isOrganizing = true; updateUI();
 
       try {
@@ -982,6 +1002,10 @@ ${state.isEstimateMode ? `
     async function generateWorkReportWithGemini() {
       if (state.images.length === 0) {
         alert("先に写真をアップロードしてください。");
+        return;
+      }
+      if (!apiKey) {
+        alert("AI機能を利用するにはコード内のAPIキーを設定してください。");
         return;
       }
       state.isDrafting = true; updateUI();
@@ -1179,8 +1203,8 @@ ${state.isEstimateMode ? `
               </div>
             </div>
             
-            <!-- ★ここを修正: hidden group-hover:flex を削除し、スマホでもPCでも常に表示されるように変更 -->
-            <div class="absolute -top-2 -right-2 flex space-x-1 z-10">
+            <!-- ★常に表示されるボタン群 (z-indexを強化) -->
+            <div class="absolute -top-2 -right-2 flex space-x-1 z-30">
               <button onclick="rotateImage('${img.id}')" class="bg-blue-500 text-white rounded-full p-1.5 shadow hover:bg-blue-600 transition-colors" title="90度回転">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-3.5 h-3.5"><use href="#icon-rotate-cw"></use></svg>
               </button>
