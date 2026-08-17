@@ -964,13 +964,13 @@ ${state.isEstimateMode ? `
 ]`;
 
         const payload = { contents: [{ role: "user", parts: [{ text: prompt }, ...imageParts] }] };
-        const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${apiKey}`;
+        const url = '/api/report';
         const delays = [1000, 2000, 4000, 8000, 16000];
 
         let success = false;
         for (let i = 0; i < delays.length; i++) {
           try {
-            const response = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
+            const response = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ prompt: prompt, images: imageParts }) });
             if (!response.ok) throw new Error(`HTTP error ${response.status}`);
             const result = await response.json();
             let text = result.candidates?.[0]?.content?.parts?.[0]?.text?.trim();
@@ -1032,13 +1032,17 @@ ${state.isEstimateMode ? `
 { "cause": "（簡潔な原因）", "method": "（簡潔な処理方法）" }`;
 
         const payload = { contents: [{ role: "user", parts: [{ text: prompt }, ...imageParts] }] };
-        const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${apiKey}`;
+        const url = '/api/report';
         const delays = [1000, 2000, 4000, 8000, 16000];
         
         let success = false;
         for (let i = 0; i < delays.length; i++) {
           try {
-            const response = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
+            const response = await fetch(url, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ prompt: prompt, images: imageParts })
+});
             if (!response.ok) throw new Error(`HTTP error ${response.status}`);
             const result = await response.json();
             let text = result.candidates?.[0]?.content?.parts?.[0]?.text?.trim();
