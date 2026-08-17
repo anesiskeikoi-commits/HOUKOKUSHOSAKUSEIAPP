@@ -8,68 +8,137 @@
 </head>
 <body class="bg-slate-100 min-h-screen p-4 md:p-8">
 
-  <div class="max-w-5xl mx-auto bg-white rounded-xl shadow-lg p-6">
-    <h1 class="text-2xl font-bold text-slate-800 mb-6 border-b pb-3">総合報告書ジェネレーター</h1>
-
-    <!-- タブ切替 -->
-    <div class="flex gap-2 mb-6">
-      <button id="tabPhoto" onclick="switchTab('photo')" class="px-4 py-2 rounded-lg font-bold bg-blue-600 text-white">📸 写真報告書</button>
-      <button id="tabReport" onclick="switchTab('report')" class="px-4 py-2 rounded-lg font-bold bg-slate-200 text-slate-700">📄 作業報告書</button>
-    </div>
-
-    <!-- 1. 写真報告書エリア -->
-    <div id="photoSection" class="space-y-6">
-      <div class="border-2 border-dashed border-slate-300 rounded-lg p-6 text-center bg-slate-50">
-        <input type="file" id="imageInput" multiple accept="image/*" class="hidden" onchange="handleImageUpload(event)">
-        <button onclick="document.getElementById('imageInput').click()" class="bg-blue-600 text-white px-6 py-2 rounded-lg font-bold hover:bg-blue-700">＋ 写真を追加する</button>
-        <button onclick="organizeImagesWithGemini()" class="bg-purple-600 text-white px-6 py-2 rounded-lg font-bold ml-2 hover:bg-purple-700">✨ AIおまかせ整理</button>
+  <div class="max-w-5xl mx-auto bg-white rounded-xl shadow-lg p-6 space-y-6">
+    
+    <!-- ヘッダー＆タブ -->
+    <div class="flex justify-between items-center border-b pb-4">
+      <div class="flex gap-2">
+        <button id="tabPhoto" onclick="switchTab('photo')" class="px-5 py-2.5 rounded-lg font-bold bg-blue-600 text-white shadow-sm">🖼️ 写真報告書</button>
+        <button id="tabReport" onclick="switchTab('report')" class="px-5 py-2.5 rounded-lg font-bold bg-slate-200 text-slate-700 hover:bg-slate-300">📄 作業報告書</button>
       </div>
-
-      <!-- プレビュー表示エリア -->
-      <div id="imagePreviewGrid" class="grid grid-cols-1 md:grid-cols-3 gap-4"></div>
+      <button onclick="location.reload()" class="border border-red-300 text-red-600 px-4 py-2 rounded-lg text-sm font-bold hover:bg-red-50">📑 新規案件 (リセット)</button>
     </div>
 
-    <!-- 2. 作業報告書エリア -->
-    <div id="reportSection" class="hidden space-y-4">
+    <!-- 共通入力エリア -->
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 bg-slate-50 p-4 rounded-lg border border-slate-200">
       <div>
-        <label class="block text-sm font-bold text-slate-700 mb-1">依頼内容・現場メモ</label>
-        <textarea id="requestContent" class="w-full border rounded-lg p-3 h-24" placeholder="例: 2F男子トイレ洋式1台詰まりの点検修理"></textarea>
+        <label class="block text-sm font-bold text-slate-700 mb-1">現場名 (共通)</label>
+        <input type="text" id="commonSiteName" class="w-full border rounded-lg p-2.5 text-sm" placeholder="例: 快活CLUB 松戸馬橋店">
+      </div>
+      <div>
+        <label class="block text-sm font-bold text-slate-700 mb-1">作業日 (共通)</label>
+        <input type="date" id="commonWorkDate" class="w-full border rounded-lg p-2.5 text-sm">
+      </div>
+    </div>
+
+    <!-- 1. 写真報告書セクション -->
+    <div id="photoSection" class="space-y-6">
+      <div class="border border-blue-200 bg-blue-50/50 rounded-xl p-4 space-y-4">
+        <div class="flex flex-wrap justify-between items-center gap-3">
+          <div class="flex items-center gap-4 text-sm font-bold text-blue-900">
+            <span id="photoCount">📤 アップロード済み (0枚)</span>
+            <div class="flex items-center gap-2 bg-white px-3 py-1 rounded-md border border-blue-200">
+              レイアウト:
+              <label class="cursor-pointer"><input type="radio" name="layout" value="3" checked> 3枚/頁</label>
+              <label class="cursor-pointer ml-2"><input type="radio" name="layout" value="4"> 4枚/頁</label>
+            </div>
+            <div class="flex items-center gap-2 bg-white px-3 py-1 rounded-md border border-blue-200">
+              用途:
+              <label class="cursor-pointer"><input type="radio" name="usage" value="通常" checked> 通常(施工)</label>
+              <label class="cursor-pointer ml-2"><input type="radio" name="usage" value="見積"> 見積(現調)</label>
+            </div>
+          </div>
+          <div class="flex gap-2">
+            <input type="file" id="imageInput" multiple accept="image/*" class="hidden" onchange="handleImageUpload(event)">
+            <button onclick="document.getElementById('imageInput').click()" class="bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-bold hover:bg-blue-700">＋ 写真を追加する</button>
+            <button onclick="organizeImagesWithGemini()" class="bg-purple-500 text-white px-4 py-2 rounded-lg text-sm font-bold hover:bg-purple-600">✨ AIおまかせ整理</button>
+            <button onclick="clearImages()" class="border border-red-200 text-red-500 bg-white px-3 py-2 rounded-lg text-sm font-bold hover:bg-red-50">全クリア</button>
+          </div>
+        </div>
+
+        <div id="imagePreviewGrid" class="grid grid-cols-1 md:grid-cols-3 gap-4 min-h-[160px] border-2 border-dashed border-blue-200 rounded-lg p-4 bg-white items-center justify-center">
+          <p class="text-slate-400 text-sm text-center col-span-3">写真をアップロードしてください（AIが自動で判別します）</p>
+        </div>
       </div>
 
-      <button onclick="generateWorkReportWithGemini()" class="bg-emerald-600 text-white px-6 py-2 rounded-lg font-bold hover:bg-emerald-700">🪄 AIで自動入力</button>
+      <button class="w-full bg-slate-400 text-white py-3 rounded-xl font-bold flex items-center justify-center gap-2 cursor-not-allowed">
+        📥 写真報告書のPDFを出力
+      </button>
+    </div>
 
-      <div class="grid grid-cols-1 md:grid-cols-2 gap-4 pt-4 border-t">
-        <div>
-          <label class="block text-sm font-bold text-slate-700 mb-1">【原因】</label>
-          <textarea id="inputCause" class="w-full border rounded-lg p-3 h-24" placeholder="AIが推測して入力します"></textarea>
+    <!-- 2. 作業報告書セクション -->
+    <div id="reportSection" class="hidden space-y-6">
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <!-- 左側：依頼情報 -->
+        <div class="space-y-3 bg-slate-50 p-4 rounded-xl border border-slate-200">
+          <h2 class="font-bold text-slate-700 border-b pb-2">📝 現場・依頼情報</h2>
+          <div class="grid grid-cols-2 gap-2">
+            <div>
+              <label class="text-xs font-bold text-slate-600">依頼日</label>
+              <input type="date" class="w-full border rounded p-2 text-sm">
+            </div>
+            <div>
+              <label class="text-xs font-bold text-slate-600">依頼No.</label>
+              <input type="text" class="w-full border rounded p-2 text-sm" placeholder="例: 12345">
+            </div>
+          </div>
+          <div>
+            <label class="text-xs font-bold text-slate-600">顧客名</label>
+            <input type="text" class="w-full border rounded p-2 text-sm" placeholder="例: 株式会社 快活フロンティア">
+          </div>
+          <div>
+            <label class="text-xs font-bold text-slate-600">現場住所</label>
+            <input type="text" class="w-full border rounded p-2 text-sm" placeholder="例: 千葉県松戸市西馬橋2-1-1">
+          </div>
+          <div>
+            <label class="text-xs font-bold text-slate-600">依頼内容</label>
+            <textarea id="requestContent" class="w-full border rounded p-2 text-sm h-20" placeholder="例: 2F男子トイレ洋式1台詰まりの為点検修理"></textarea>
+          </div>
+          <div>
+            <label class="text-xs font-bold text-slate-600">作業担当者</label>
+            <input type="text" class="w-full border rounded p-2 text-sm" placeholder="例: 楠田 芽生">
+          </div>
         </div>
-        <div>
-          <label class="block text-sm font-bold text-slate-700 mb-1">【処理方法】</label>
-          <textarea id="inputMethod" class="w-full border rounded-lg p-3 h-24" placeholder="AIが推測して入力します"></textarea>
+
+        <!-- 右側：報告内容 -->
+        <div class="space-y-3 bg-emerald-50/50 border border-emerald-200 p-4 rounded-xl">
+          <div class="flex justify-between items-center border-b border-emerald-200 pb-2">
+            <h2 class="font-bold text-emerald-900">🦠 報告内容</h2>
+            <button id="btnAiGenerate" onclick="generateWorkReportWithGemini()" class="bg-emerald-700 text-white px-3 py-1.5 rounded-lg text-xs font-bold hover:bg-emerald-800 flex items-center gap-1">
+              🪄 AIで自動入力
+            </button>
+          </div>
+          <div>
+            <label class="text-xs font-bold text-slate-600">【原因】</label>
+            <textarea id="inputCause" class="w-full border rounded p-2 text-sm h-20" placeholder="例: 経年劣化"></textarea>
+          </div>
+          <div>
+            <label class="text-xs font-bold text-slate-600">【処理方法】</label>
+            <textarea id="inputMethod" class="w-full border rounded p-2 text-sm h-20" placeholder="例: モーター、制御機器部品交換にて完了"></textarea>
+          </div>
+          <div>
+            <label class="text-xs font-bold text-slate-600">【備考】</label>
+            <textarea id="inputNotes" class="w-full border rounded p-2 text-sm h-16"></textarea>
+          </div>
         </div>
       </div>
     </div>
+
   </div>
 
   <script>
-    let state = {
-      images: [],
-      isOrganizing: false,
-      isDrafting: false
-    };
+    let state = { images: [] };
 
     function switchTab(tab) {
-      if (tab === 'photo') {
-        document.getElementById('photoSection').classList.remove('hidden');
-        document.getElementById('reportSection').classList.add('hidden');
-        document.getElementById('tabPhoto').className = "px-4 py-2 rounded-lg font-bold bg-blue-600 text-white";
-        document.getElementById('tabReport').className = "px-4 py-2 rounded-lg font-bold bg-slate-200 text-slate-700";
-      } else {
-        document.getElementById('photoSection').classList.add('hidden');
-        document.getElementById('reportSection').classList.remove('hidden');
-        document.getElementById('tabPhoto').className = "px-4 py-2 rounded-lg font-bold bg-slate-200 text-slate-700";
-        document.getElementById('tabReport').className = "px-4 py-2 rounded-lg font-bold bg-emerald-600 text-white";
-      }
+      const isPhoto = tab === 'photo';
+      document.getElementById('photoSection').classList.toggle('hidden', !isPhoto);
+      document.getElementById('reportSection').classList.toggle('hidden', isPhoto);
+      document.getElementById('tabPhoto').className = isPhoto 
+        ? "px-5 py-2.5 rounded-lg font-bold bg-blue-600 text-white shadow-sm"
+        : "px-5 py-2.5 rounded-lg font-bold bg-slate-200 text-slate-700 hover:bg-slate-300";
+      document.getElementById('tabReport').className = !isPhoto 
+        ? "px-5 py-2.5 rounded-lg font-bold bg-emerald-700 text-white shadow-sm"
+        : "px-5 py-2.5 rounded-lg font-bold bg-slate-200 text-slate-700 hover:bg-slate-300";
     }
 
     function handleImageUpload(e) {
@@ -80,8 +149,7 @@
           state.images.push({
             id: Date.now() + idx,
             dataUrl: event.target.result,
-            label: "施工前",
-            comment: ""
+            label: "施工前"
           });
           renderPreviews();
         };
@@ -89,12 +157,24 @@
       });
     }
 
+    function clearImages() {
+      state.images = [];
+      renderPreviews();
+    }
+
     function renderPreviews() {
       const grid = document.getElementById('imagePreviewGrid');
+      document.getElementById('photoCount').innerText = `📤 アップロード済み (${state.images.length}枚)`;
+      
+      if (state.images.length === 0) {
+        grid.innerHTML = '<p class="text-slate-400 text-sm text-center col-span-3">写真をアップロードしてください（AIが自動で判別します）</p>';
+        return;
+      }
+
       grid.innerHTML = state.images.map((img, i) => `
-        <div class="border rounded-lg p-3 bg-white shadow-sm space-y-2">
-          <img src="${img.dataUrl}" class="w-full h-40 object-cover rounded">
-          <select onchange="state.images[${i}].label = this.value" class="w-full border rounded p-1 text-sm">
+        <div class="border rounded-lg p-2 bg-white shadow-sm space-y-2 relative">
+          <img src="${img.dataUrl}" class="w-full h-36 object-cover rounded">
+          <select onchange="state.images[${i}].label = this.value" class="w-full border rounded p-1 text-xs">
             <option value="現場調査" ${img.label==='現場調査'?'selected':''}>現場調査</option>
             <option value="点検" ${img.label==='点検'?'selected':''}>点検</option>
             <option value="施工前" ${img.label==='施工前'?'selected':''}>施工前</option>
@@ -106,7 +186,46 @@
       `).join('');
     }
 
-    // AI写真整理機能（Vercelサーバー経由）
+    // AI文章生成機能
+    async function generateWorkReportWithGemini() {
+      const requestContent = document.getElementById('requestContent').value;
+      if (!requestContent) return alert("依頼内容を入力してください。");
+
+      const btn = document.getElementById('btnAiGenerate');
+      btn.innerText = "⏳ 生成中...";
+      btn.disabled = true;
+
+      try {
+        const response = await fetch('/api/report', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            prompt: `依頼内容【${requestContent}】を元に、【原因】と【処理方法】を推測してJSON形式でのみ出力してください。例: {"cause": "原因の文章", "method": "処理方法の文章"}`
+          })
+        });
+
+        const data = await response.json();
+        
+        // Vercel経由のレスポンスからテキスト抽出
+        const text = data.candidates?.[0]?.content?.parts?.[0]?.text || "";
+        const jsonMatch = text.match(/\{[\s\S]*\}/);
+
+        if (jsonMatch) {
+          const parsed = JSON.parse(jsonMatch[0]);
+          document.getElementById('inputCause').value = parsed.cause || "";
+          document.getElementById('inputMethod').value = parsed.method || "";
+        } else {
+          alert("AIの回答の解析に失敗しました。");
+        }
+      } catch (error) {
+        alert("AIによる推測に失敗しました。");
+      } finally {
+        btn.innerText = "🪄 AIで自動入力";
+        btn.disabled = false;
+      }
+    }
+
+    // AI写真整理機能
     async function organizeImagesWithGemini() {
       if (state.images.length < 2) return alert("写真を2枚以上アップロードしてください。");
 
@@ -115,48 +234,23 @@
         data: img.dataUrl.split(',')[1]
       }));
 
-      const prompt = `あなたは設備メンテナンスの専門家です。写真を分析し適切なラベルを判定してください。`;
-
       try {
         const response = await fetch('/api/report', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ prompt: prompt, images: imageParts })
+          body: JSON.stringify({
+            prompt: "アップロードされた写真を分析し、適切なラベルを判定してください。",
+            images: imageParts
+          })
         });
 
-        const data = await response.json();
-        alert("AIによる写真整理が完了しました！");
-      } catch (error) {
-        alert("AIによる自動整理に失敗しました。");
-      }
-    }
-
-    // AI文章作成機能（Vercelサーバー経由）
-    async function generateWorkReportWithGemini() {
-      const requestContent = document.getElementById('requestContent').value;
-      if (!requestContent) return alert("依頼内容・メモを入力してください。");
-
-      const prompt = `依頼内容【${requestContent}】を元に、【原因】と【処理方法】を推測してJSON形式で出力してください。{"cause": "原因", "method": "処理方法"}`;
-
-      try {
-        const response = await fetch('/api/report', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ prompt: prompt })
-        });
-
-        const data = await response.json();
-        const text = data.candidates[0].content.parts[0].text;
-        const jsonMatch = text.match(/\{[\s\S]*\}/);
-        
-        if (jsonMatch) {
-          const parsed = JSON.parse(jsonMatch[0]);
-          document.getElementById('inputCause').value = parsed.cause || "";
-          document.getElementById('inputMethod').value = parsed.method || "";
-          alert("AIによる生成が完了しました！");
+        if (response.ok) {
+          alert("AIによる写真の分析が完了しました！");
+        } else {
+          alert("AIによる自動整理に失敗しました。");
         }
       } catch (error) {
-        alert("AIによる推測に失敗しました。");
+        alert("エラーが発生しました。");
       }
     }
   </script>
