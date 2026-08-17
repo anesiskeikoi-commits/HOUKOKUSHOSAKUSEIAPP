@@ -921,10 +921,10 @@ ${state.isEstimateMode ? `
 
     async function organizeImagesWithGemini() {
       if (state.images.length < 2) return;
-      if (!apiKey) {
-        alert("AI機能を利用するにはコード内のAPIキーを設定してください。");
-        return;
-      }
+
+
+
+
       state.isOrganizing = true; updateUI();
 
       try {
@@ -1009,10 +1009,10 @@ ${state.isEstimateMode ? `
         alert("先に写真をアップロードしてください。");
         return;
       }
-      if (!apiKey) {
-        alert("AI機能を利用するにはコード内のAPIキーを設定してください。");
-        return;
-      }
+
+
+
+      
       state.isDrafting = true; updateUI();
 
       try {
