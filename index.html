@@ -216,9 +216,14 @@
                 <input type="date" id="inputRequestDate" class="w-full p-1.5 text-sm border border-gray-300 rounded bg-gray-50 focus:bg-white" oninput="updateState('requestDate', this.value)"/>
               </div>
               <div>
-                <label class="block text-xs font-medium text-gray-600">顧客名</label>
-                <input type="text" id="inputClientName" placeholder="例: 株式会社 快活フロンティア" class="w-full p-1.5 text-sm border border-gray-300 rounded" oninput="updateState('clientName', this.value)"/>
+                <label class="block text-xs font-medium text-gray-600">依頼No.</label>
+                <!-- ★ここに「依頼No.」の入力欄を追加 -->
+                <input type="text" id="inputRequestNo" placeholder="例: 12345" class="w-full p-1.5 text-sm border border-gray-300 rounded" oninput="updateState('requestNo', this.value)"/>
               </div>
+            </div>
+            <div>
+              <label class="block text-xs font-medium text-gray-600">顧客名</label>
+              <input type="text" id="inputClientName" placeholder="例: 株式会社 快活フロンティア" class="w-full p-1.5 text-sm border border-gray-300 rounded" oninput="updateState('clientName', this.value)"/>
             </div>
             <div>
               <label class="block text-xs font-medium text-gray-600">現場住所</label>
@@ -370,7 +375,7 @@
                   <th style="border: 1px solid #111827; background-color: #f3f4f6; padding: 8px; text-align: left; font-weight: 500; width: 15%;">依頼日</th>
                   <td id="pdfRequestDate" style="border: 1px solid #111827; padding: 8px; width: 35%;"></td>
                   <th style="border: 1px solid #111827; background-color: #f3f4f6; padding: 8px; text-align: left; font-weight: 500; width: 15%;">依頼No.</th>
-                  <td style="border: 1px solid #111827; padding: 8px; width: 35%;"></td>
+                  <td id="pdfRequestNo" style="border: 1px solid #111827; padding: 8px; width: 35%;"></td>
                 </tr>
                 <tr>
                   <th style="border: 1px solid #111827; background-color: #f3f4f6; padding: 8px; text-align: left; font-weight: 500;">現場名</th>
@@ -446,6 +451,7 @@
       date: '',
       clientName: '',
       requestDate: '',
+      requestNo: '', // ★stateにrequestNoを追加
       address: '',
       requestContent: '',
       workerName: '',
@@ -531,6 +537,7 @@
       state.date = '';
       state.clientName = '';
       state.requestDate = '';
+      state.requestNo = ''; // ★リセット処理に追加
       state.address = '';
       state.requestContent = '';
       state.workerName = '';
@@ -772,14 +779,12 @@
           const mimeType = item.dataUrl.match(/data:(.*);base64/)[1];
           
           if (!apiKey) {
-            // ★ APIキーがない場合はAI判定を完全にスキップし、一瞬でデフォルトラベルを付与する
             const imgRef = state.images.find(img => img.id === item.id);
             if (imgRef) {
               imgRef.label = state.isEstimateMode ? '現場調査' : '施工前';
             }
             updateUI();
           } else {
-            // APIキーがある場合のみAIに判定してもらう
             try {
               const label = await analyzeImageWithGemini(base64Data, mimeType, item.index, totalCount);
               const imgRef = state.images.find(img => img.id === item.id);
@@ -790,7 +795,7 @@
               if (imgRef) imgRef.label = state.isEstimateMode ? '現場調査' : '施工前'; 
               updateUI();
             }
-            await new Promise(r => setTimeout(r, 600)); // APIのパンク防止待機
+            await new Promise(r => setTimeout(r, 600)); 
           }
         }
       } catch (error) {
@@ -903,7 +908,7 @@ ${state.isEstimateMode ? `
           for (const label of labelOptions) {
             if (text && text.includes(label)) return label;
           }
-          return state.isEstimateMode ? '現場調査' : '施工前'; // 迷った場合は施工前にして気づきやすく
+          return state.isEstimateMode ? '現場調査' : '施工前'; 
         } catch (error) {
           if (i === delays.length - 1) {
              return state.isEstimateMode ? '現場調査' : '施工前';
@@ -1078,8 +1083,8 @@ ${state.isEstimateMode ? `
       const opt = {
         margin:       0,
         filename:     `${state.siteName || '名称未設定'}_${prefix}.pdf`,
-        image:        { type: 'jpeg', quality: 0.8 },
-        html2canvas:  { scale: 2, useCORS: true, logging: false, scrollY: 0, scrollX: 0 }, // ★ キャプチャ基準を0に固定
+        image:        { type: 'jpeg', quality: 0.75 },
+        html2canvas:  { scale: 1.5, useCORS: true, logging: false, scrollY: 0, scrollX: 0 }, 
         jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' },
         pagebreak:    { mode: 'css', before: '.html2pdf__page-break' }
       };
@@ -1248,7 +1253,6 @@ ${state.isEstimateMode ? `
       }
 
       chunkedImages.forEach((chunk, pageIndex) => {
-        // ★ html2pdf のために、ページとページの間に改ページタグを挟む
         if (pageIndex > 0) {
           html += `<div class="html2pdf__page-break"></div>`;
         }
@@ -1304,6 +1308,7 @@ ${state.isEstimateMode ? `
       document.getElementById('pdfClientName').textContent = state.clientName;
       document.getElementById('pdfWorkerName').textContent = state.workerName;
       document.getElementById('pdfRequestDate').textContent = safeDate(state.requestDate);
+      document.getElementById('pdfRequestNo').textContent = state.requestNo; // ★PDFプレビューに反映
       document.getElementById('pdfSiteName').textContent = state.siteName;
       document.getElementById('pdfAddress').textContent = state.address;
       document.getElementById('pdfRequestContent').textContent = state.requestContent;
