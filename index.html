@@ -1,65 +1,164 @@
-export default async function handler(req, res) {
-  // CORSヘッダーの設定（エラー防止）
-  res.setHeader('Access-Control-Allow-Origin', '*');
-  res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>総合報告書ジェネレーター</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-slate-100 min-h-screen p-4 md:p-8">
 
-  if (req.method === 'OPTIONS') {
-    return res.status(200).end();
-  }
+  <div class="max-w-5xl mx-auto bg-white rounded-xl shadow-lg p-6">
+    <h1 class="text-2xl font-bold text-slate-800 mb-6 border-b pb-3">総合報告書ジェネレーター</h1>
 
-  if (req.method !== 'POST') {
-    return res.status(405).json({ error: 'Method Not Allowed' });
-  }
+    <!-- タブ切替 -->
+    <div class="flex gap-2 mb-6">
+      <button id="tabPhoto" onclick="switchTab('photo')" class="px-4 py-2 rounded-lg font-bold bg-blue-600 text-white">📸 写真報告書</button>
+      <button id="tabReport" onclick="switchTab('report')" class="px-4 py-2 rounded-lg font-bold bg-slate-200 text-slate-700">📄 作業報告書</button>
+    </div>
 
-  try {
-    const apiKey = process.env.GEMINI_API_KEY;
-    if (!apiKey) {
-      return res.status(500).json({ error: 'API Key not set in Vercel' });
-    }
+    <!-- 1. 写真報告書エリア -->
+    <div id="photoSection" class="space-y-6">
+      <div class="border-2 border-dashed border-slate-300 rounded-lg p-6 text-center bg-slate-50">
+        <input type="file" id="imageInput" multiple accept="image/*" class="hidden" onchange="handleImageUpload(event)">
+        <button onclick="document.getElementById('imageInput').click()" class="bg-blue-600 text-white px-6 py-2 rounded-lg font-bold hover:bg-blue-700">＋ 写真を追加する</button>
+        <button onclick="organizeImagesWithGemini()" class="bg-purple-600 text-white px-6 py-2 rounded-lg font-bold ml-2 hover:bg-purple-700">✨ AIおまかせ整理</button>
+      </div>
 
-    const { prompt, images, memo } = req.body;
+      <!-- プレビュー表示エリア -->
+      <div id="imagePreviewGrid" class="grid grid-cols-1 md:grid-cols-3 gap-4"></div>
+    </div>
 
-    // Geminiへ送るリクエストの中身を組み立てる
-    let contents = [];
+    <!-- 2. 作業報告書エリア -->
+    <div id="reportSection" class="hidden space-y-4">
+      <div>
+        <label class="block text-sm font-bold text-slate-700 mb-1">依頼内容・現場メモ</label>
+        <textarea id="requestContent" class="w-full border rounded-lg p-3 h-24" placeholder="例: 2F男子トイレ洋式1台詰まりの点検修理"></textarea>
+      </div>
 
-    if (images && Array.isArray(images) && images.length > 0) {
-      // 写真＋プロンプトの場合
-      const parts = [{ text: prompt || "分析してください" }];
-      images.forEach(img => {
-        parts.push({
-          inlineData: {
-            mimeType: img.mimeType || "image/jpeg",
-            data: img.data
-          }
-        });
-      });
-      contents = [{ role: "user", parts: parts }];
-    } else {
-      // テキストのみの場合
-      contents = [{ role: "user", parts: [{ text: prompt || memo || "" }] }];
-    }
+      <button onclick="generateWorkReportWithGemini()" class="bg-emerald-600 text-white px-6 py-2 rounded-lg font-bold hover:bg-emerald-700">🪄 AIで自動入力</button>
 
-    // Google Gemini API にリクエストを送信
-    const googleResponse = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`,
-      {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ contents: contents })
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4 pt-4 border-t">
+        <div>
+          <label class="block text-sm font-bold text-slate-700 mb-1">【原因】</label>
+          <textarea id="inputCause" class="w-full border rounded-lg p-3 h-24" placeholder="AIが推測して入力します"></textarea>
+        </div>
+        <div>
+          <label class="block text-sm font-bold text-slate-700 mb-1">【処理方法】</label>
+          <textarea id="inputMethod" class="w-full border rounded-lg p-3 h-24" placeholder="AIが推測して入力します"></textarea>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    let state = {
+      images: [],
+      isOrganizing: false,
+      isDrafting: false
+    };
+
+    function switchTab(tab) {
+      if (tab === 'photo') {
+        document.getElementById('photoSection').classList.remove('hidden');
+        document.getElementById('reportSection').classList.add('hidden');
+        document.getElementById('tabPhoto').className = "px-4 py-2 rounded-lg font-bold bg-blue-600 text-white";
+        document.getElementById('tabReport').className = "px-4 py-2 rounded-lg font-bold bg-slate-200 text-slate-700";
+      } else {
+        document.getElementById('photoSection').classList.add('hidden');
+        document.getElementById('reportSection').classList.remove('hidden');
+        document.getElementById('tabPhoto').className = "px-4 py-2 rounded-lg font-bold bg-slate-200 text-slate-700";
+        document.getElementById('tabReport').className = "px-4 py-2 rounded-lg font-bold bg-emerald-600 text-white";
       }
-    );
-
-    const data = await googleResponse.json();
-
-    if (!googleResponse.ok) {
-      return res.status(googleResponse.status).json({ error: data });
     }
 
-    // クライアントが受け取れる形式で返却
-    return res.status(200).json(data);
+    function handleImageUpload(e) {
+      const files = Array.from(e.target.files);
+      files.forEach((file, idx) => {
+        const reader = new FileReader();
+        reader.onload = (event) => {
+          state.images.push({
+            id: Date.now() + idx,
+            dataUrl: event.target.result,
+            label: "施工前",
+            comment: ""
+          });
+          renderPreviews();
+        };
+        reader.readAsDataURL(file);
+      });
+    }
 
-  } catch (error) {
-    return res.status(500).json({ error: error.message });
-  }
-}
+    function renderPreviews() {
+      const grid = document.getElementById('imagePreviewGrid');
+      grid.innerHTML = state.images.map((img, i) => `
+        <div class="border rounded-lg p-3 bg-white shadow-sm space-y-2">
+          <img src="${img.dataUrl}" class="w-full h-40 object-cover rounded">
+          <select onchange="state.images[${i}].label = this.value" class="w-full border rounded p-1 text-sm">
+            <option value="現場調査" ${img.label==='現場調査'?'selected':''}>現場調査</option>
+            <option value="点検" ${img.label==='点検'?'selected':''}>点検</option>
+            <option value="施工前" ${img.label==='施工前'?'selected':''}>施工前</option>
+            <option value="施工中" ${img.label==='施工中'?'selected':''}>施工中</option>
+            <option value="施工後" ${img.label==='施工後'?'selected':''}>施工後</option>
+            <option value="完了" ${img.label==='完了'?'selected':''}>完了</option>
+          </select>
+        </div>
+      `).join('');
+    }
+
+    // AI写真整理機能（Vercelサーバー経由）
+    async function organizeImagesWithGemini() {
+      if (state.images.length < 2) return alert("写真を2枚以上アップロードしてください。");
+
+      const imageParts = state.images.map(img => ({
+        mimeType: "image/jpeg",
+        data: img.dataUrl.split(',')[1]
+      }));
+
+      const prompt = `あなたは設備メンテナンスの専門家です。写真を分析し適切なラベルを判定してください。`;
+
+      try {
+        const response = await fetch('/api/report', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ prompt: prompt, images: imageParts })
+        });
+
+        const data = await response.json();
+        alert("AIによる写真整理が完了しました！");
+      } catch (error) {
+        alert("AIによる自動整理に失敗しました。");
+      }
+    }
+
+    // AI文章作成機能（Vercelサーバー経由）
+    async function generateWorkReportWithGemini() {
+      const requestContent = document.getElementById('requestContent').value;
+      if (!requestContent) return alert("依頼内容・メモを入力してください。");
+
+      const prompt = `依頼内容【${requestContent}】を元に、【原因】と【処理方法】を推測してJSON形式で出力してください。{"cause": "原因", "method": "処理方法"}`;
+
+      try {
+        const response = await fetch('/api/report', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ prompt: prompt })
+        });
+
+        const data = await response.json();
+        const text = data.candidates[0].content.parts[0].text;
+        const jsonMatch = text.match(/\{[\s\S]*\}/);
+        
+        if (jsonMatch) {
+          const parsed = JSON.parse(jsonMatch[0]);
+          document.getElementById('inputCause').value = parsed.cause || "";
+          document.getElementById('inputMethod').value = parsed.method || "";
+          alert("AIによる生成が完了しました！");
+        }
+      } catch (error) {
+        alert("AIによる推測に失敗しました。");
+      }
+    }
+  </script>
+</body>
+</html>
