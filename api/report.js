@@ -1,4 +1,5 @@
-export default async function handler(req, res) {
+module.exports = async function handler(req, res) {
+  // CORSヘッダーの設定（ブラウザからのアクセスを許可）
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
@@ -8,11 +9,14 @@ export default async function handler(req, res) {
 
   try {
     const apiKey = process.env.GEMINI_API_KEY;
-    if (!apiKey) return res.status(500).json({ error: 'GEMINI_API_KEY is not set in Vercel environment variables.' });
+    if (!apiKey) {
+      return res.status(500).json({ error: 'Vercelの環境変数に GEMINI_API_KEY が設定されていません。' });
+    }
 
-    const { prompt, images } = req.body;
+    const { prompt, images } = req.body || {};
     let parts = [{ text: prompt || "分析してください" }];
 
+    // 画像データがある場合は組み立てる
     if (images && Array.isArray(images)) {
       images.forEach(img => {
         parts.push({
@@ -24,8 +28,9 @@ export default async function handler(req, res) {
       });
     }
 
+    // 正しいモデル名（gemini-2.0-flash）でGoogle APIを呼び出す
     const googleResponse = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`,
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`,
       {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -34,9 +39,14 @@ export default async function handler(req, res) {
     );
 
     const data = await googleResponse.json();
-    return res.status(googleResponse.status).json(data);
+
+    if (!googleResponse.ok) {
+      return res.status(googleResponse.status).json({ error: data });
+    }
+
+    return res.status(200).json(data);
 
   } catch (error) {
     return res.status(500).json({ error: error.message });
   }
-}
+};
